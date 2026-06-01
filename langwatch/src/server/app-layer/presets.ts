@@ -298,7 +298,6 @@ export function initializeDefaultApp(options?: { processRole?: ProcessRole }): A
     eventUsageService,
     planResolver,
     orgRepo,
-    simulationReads,
     clickhouseEnabled,
   );
 
@@ -734,7 +733,6 @@ export function createTestApp(overrides?: Partial<AppDependencies>): App {
       new EventUsageService(),
       async () => FREE_PLAN,
       null,
-      SimulationRunService.create(null),
       false,
     ),
     planProvider: PlanProviderService.create({

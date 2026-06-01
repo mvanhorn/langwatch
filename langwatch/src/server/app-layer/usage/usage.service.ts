@@ -11,12 +11,9 @@ import {
 } from "./usage-meter-policy";
 import { buildLimitMessage } from "./limit-message";
 import { OrganizationRepository } from "../../repositories/organization.repository";
-import { ScenarioSetLimitExceededError } from "./errors";
-import type { SimulationRunService } from "../simulations/simulation-run.service";
 import { UNLIMITED_MESSAGES } from "../../../../ee/billing/planLimits";
 
 const CACHE_TTL_MS = 30_000; // 30 seconds
-const MAX_FREE_SCENARIO_SETS = 3;
 
 export interface UsageLimitResult {
   exceeded: boolean;
@@ -37,7 +34,6 @@ export interface UsageLimitResult {
 export class UsageService {
   private readonly countCache: TtlCache<number>;
   private readonly decisionCache: TtlCache<MeterDecision>;
-  private readonly scenarioSetCache: TtlCache<string[]>;
 
   constructor(
     private readonly organizationService: OrganizationService,
@@ -45,12 +41,10 @@ export class UsageService {
     private readonly eventUsageService: EventUsageService,
     private readonly planResolver: PlanResolver,
     private readonly organizationRepository: OrganizationRepository | null,
-    private readonly simulationRunService: Pick<SimulationRunService, "getDistinctExternalSetIds">,
     private readonly clickhouseAvailable: boolean,
   ) {
     this.countCache = new TtlCache<number>(CACHE_TTL_MS, "ttlcache:usage:count:");
     this.decisionCache = new TtlCache<MeterDecision>(CACHE_TTL_MS, "ttlcache:usage:decision:");
-    this.scenarioSetCache = new TtlCache<string[]>(CACHE_TTL_MS, "ttlcache:usage:scenarioSets:");
   }
 
   async checkLimit({ teamId }: { teamId: string }): Promise<UsageLimitResult> {
@@ -85,69 +79,6 @@ export class UsageService {
       };
     }
     return { exceeded: false };
-  }
-
-  /**
-   * Checks whether the organization may use the given scenario set ID.
-   *
-   * Known sets (cached) are allowed immediately. Unknown sets trigger a
-   * query via the simulation service to count distinct external scenario
-   * sets across all org projects. If the count is at or above the plan
-   * limit and the set is new, throws ScenarioSetLimitExceededError.
-   */
-  async checkScenarioSetLimit({
-    organizationId,
-    scenarioSetId,
-  }: {
-    organizationId: string;
-    scenarioSetId: string;
-  }): Promise<void> {
-    // Fast path: set is already known from a recent check
-    const cachedArr = await this.scenarioSetCache.get(organizationId);
-    if (cachedArr?.includes(scenarioSetId)) {
-      return;
-    }
-
-    const plan = await this.planResolver(organizationId);
-    const maxScenarioSets =
-      plan.free && !plan.overrideAddingLimitations
-        ? MAX_FREE_SCENARIO_SETS
-        : Infinity;
-
-    // Use cached array for counting if available; only query ClickHouse on cold start.
-    // This prevents the async event-sourcing delay from resetting the count:
-    // events are written to ClickHouse asynchronously, so a fresh query may
-    // return stale data and overwrite sets we already know about.
-    let knownSetIds: string[];
-    if (cachedArr) {
-      knownSetIds = cachedArr;
-    } else {
-      const projectIds =
-        await this.organizationService.getProjectIds(organizationId);
-      if (projectIds.length === 0) {
-        await this.scenarioSetCache.set(organizationId, [scenarioSetId]);
-        return;
-      }
-
-      const fromService =
-        await this.simulationRunService.getDistinctExternalSetIds({ projectIds });
-      knownSetIds = [...fromService];
-      await this.scenarioSetCache.set(organizationId, knownSetIds);
-    }
-
-    // If this set already exists, allow
-    if (knownSetIds.includes(scenarioSetId)) {
-      return;
-    }
-
-    // This is a new set -- check against limit
-    if (knownSetIds.length >= maxScenarioSets) {
-      throw new ScenarioSetLimitExceededError(knownSetIds.length, maxScenarioSets);
-    }
-
-    // Allowed: record the new set in the cache
-    knownSetIds.push(scenarioSetId);
-    await this.scenarioSetCache.set(organizationId, knownSetIds);
   }
 
   /**
