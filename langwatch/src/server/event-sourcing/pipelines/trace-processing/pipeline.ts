@@ -2,6 +2,7 @@ import type { TraceSummaryData } from "~/server/app-layer/traces/types";
 import { definePipeline } from "../../";
 import type { FoldProjectionStore } from "../../projections/foldProjection.types";
 import type { AppendStore } from "../../projections/mapProjection.types";
+import type { OutboxReactorDefinition } from "../../outbox/outboxReactor.types";
 import type { ReactorDefinition } from "../../reactors/reactor.types";
 import { AddAnnotationCommand, BulkSyncAnnotationsCommand, RemoveAnnotationCommand } from "./commands/annotationCommands";
 import { AssignTopicCommand } from "./commands/assignTopicCommand";
@@ -32,6 +33,14 @@ export interface TraceProcessingPipelineDeps {
   simulationMetricsSyncReactor: ReactorDefinition<TraceProcessingEvent, TraceSummaryData>;
   experimentMetricsSyncReactor: ReactorDefinition<TraceProcessingEvent, TraceSummaryData>;
   alertTriggerReactor: ReactorDefinition<TraceProcessingEvent, TraceSummaryData>;
+  /** NOTIFY-class branch of the alert trigger, routed through the
+   *  framework's `.withOutbox` plumbing (ADR-025). Always provided;
+   *  the framework adapter no-ops on process roles without an outbox
+   *  runtime, so unconditional registration is safe. */
+  alertTriggerNotifyOutboxReactor: OutboxReactorDefinition<
+    TraceProcessingEvent,
+    TraceSummaryData
+  >;
   spanStorageBroadcastReactor: ReactorDefinition<TraceProcessingEvent>;
   customerIoTraceSyncReactor?: ReactorDefinition<TraceProcessingEvent, TraceSummaryData>;
   gatewayBudgetSyncReactor?: ReactorDefinition<TraceProcessingEvent, TraceSummaryData>;
@@ -70,6 +79,11 @@ export function createTraceProcessingPipeline(deps: TraceProcessingPipelineDeps)
     .withReactor("traceSummary", "simulationMetricsSync", deps.simulationMetricsSyncReactor)
     .withReactor("traceSummary", "experimentMetricsSync", deps.experimentMetricsSyncReactor)
     .withReactor("traceSummary", "alertTrigger", deps.alertTriggerReactor)
+    .withOutbox(
+      "traceSummary",
+      "alertTriggerNotifyOutbox",
+      deps.alertTriggerNotifyOutboxReactor,
+    )
     .withReactor("spanStorage", "spanStorageBroadcast", deps.spanStorageBroadcastReactor);
 
   if (deps.customerIoTraceSyncReactor) {
