@@ -515,6 +515,35 @@ describe("My Agent", () => {
 });
 \`\`\`
 
+### Step 4.5: Instrument for observability (REQUIRED before running)
+
+ALWAYS instrument before running — an uninstrumented scenario run emits no traces, so you lose the OTel/LangWatch observability that makes failures debuggable. This is not optional.
+
+There are two distinct things to wire:
+
+**1. Scenario-run tracing** — call \`setupScenarioTracing()\` once at the top of the test file so the simulator, judge, and adapter spans are captured:
+
+\`\`\`typescript
+// TypeScript — add at the very top of the test file, before any imports or setup
+import { setupScenarioTracing } from "@langwatch/scenario";
+setupScenarioTracing();
+\`\`\`
+
+For Python, scenario tracing is configured via \`scenario.configure(...)\` combined with langwatch setup — defer the exact call signature to the \`tracing\` skill.
+
+**2. Agent-under-test tracing** — instrument YOUR OWN agent code so its internal LLM calls, tool invocations, and chain spans are captured:
+
+- Python: \`import langwatch; langwatch.setup()\` at startup, then decorate the agent entry point with \`@langwatch.trace()\`.
+- TypeScript: call \`setupObservability\` from the \`langwatch\` package in your agent's initialization.
+
+**Per-adapter nuance for voice:** when the adapter IS the agent (OpenAI Realtime, Gemini Live), the scenario tracing covers the session. When connecting to a deployed agent (Pipecat/Twilio/ElevenLabs hosted) or wrapping a text agent (Composable), the user's agent process must be instrumented separately in its own codebase.
+
+For framework-specific instrumentation (OpenAI/LangGraph/Vercel/Mastra/Agno), use the \`tracing\` skill — do not hand-roll. The \`tracing\` skill prompt is: "Instrument my code with LangWatch".
+
+**Prerequisite:** Traces only reach LangWatch if \`LANGWATCH_API_KEY\` is set in the environment (plus \`LANGWATCH_ENDPOINT\` for self-hosted). If setup runs but no traces appear in the LangWatch UI, the key is missing.
+
+**VERIFY after the run:** confirm traces were emitted — the scenario run prints a LangWatch trace URL, or the LangWatch UI shows ≥1 trace for the run. A green test with zero traces means instrumentation was skipped.
+
 ### Step 5: Run the Tests
 
 For Python: \`pytest -s test_my_agent.py\` (or \`uv run pytest ...\`).
@@ -622,6 +651,8 @@ If the user asks for **voice testing** (e.g. "add voice testing to my agent", "t
 
 CRITICAL: Do NOT write a text-only scenario when the user asked for voice. The judge cannot evaluate "audible empathy" or "noise robustness" against a text transcript.
 
+Voice agents especially need observability — latency, interruptions, and STT/TTS spans are exactly what makes voice failures diagnosable. Instrument per Step 4.5 above (both \`setupScenarioTracing()\` and the agent-under-test) before running. See \`langwatch scenario-docs voice/recipes/observability\` for voice-specific OTel guidance.
+
 ### Step 1: Read the voice docs
 
 \`\`\`bash
@@ -630,6 +661,7 @@ langwatch scenario-docs voice/choosing-an-adapter
 langwatch scenario-docs voice/capability-matrix
 langwatch scenario-docs voice/recipes/effects
 langwatch scenario-docs voice/recipes/multi-turn
+langwatch scenario-docs voice/recipes/observability
 \`\`\`
 
 Also browse the runnable voice examples:
@@ -1033,6 +1065,7 @@ Do NOT ask permission before Phase 1 and 2 — deliver value first. Do NOT ask g
 
 ### Code Approach
 
+- Do NOT write a scenario without instrumenting — a green run that emits no traces is half the value; call \`setupScenarioTracing()\` (run-level) and instrument the agent-under-test (\`langwatch.setup()\` / \`setupObservability\`) BEFORE running, and confirm traces appear in the LangWatch UI.
 - Do NOT create your own testing framework — \`@langwatch/scenario\` already handles simulation, judging, multi-turn, and tool-call verification
 - Do NOT write a \`main.py\` / \`run_scenarios.py\` / custom runner that loops over scenarios. Each scenario IS a test (\`it(...)\` / \`async def test_*\`) — run them with \`pytest\` or \`vitest\`. The test runner already gives you parallelism, retries of just the failing case, watch mode, CI integration, and per-test timeouts; a runner script re-implements all of that and ships with none of it wired up.
 - Do NOT invent a JSON / YAML / TOML "scenario DSL" with keys like \`{ "name": ..., "description": ..., "criteria": [...] }\` and then load it into a generic loop. The whole point of Scenario being code is that each test is real code: you can use \`for\`, \`if\`, parametrize (\`@pytest.mark.parametrize\`, \`it.each(...)\`), pull a fixture, call a helper to mint a session, branch by environment, share setup via a \`conftest.py\`, mock a tool inline — none of which a DSL gives you. The moment a teammate needs a new edge case ("only on Tuesdays the agent should escalate"), the DSL grows another key, then another, until it's a worse version of Python/TypeScript with none of the tooling. If the same boilerplate repeats across scenarios, extract a helper FUNCTION that returns an \`AgentAdapter\` / a built \`UserSimulatorAgent\` / a script tuple — keep each scenario its own test case so it stays grep-able and debuggable.
@@ -1050,6 +1083,7 @@ Do NOT ask permission before Phase 1 and 2 — deliver value first. Do NOT ask g
 
 ### Voice Agents
 
+- Do NOT skip observability on voice agents — latency, interruption, and STT/TTS spans are exactly what you need when a voice scenario fails; instrument before running (Step 4.5: \`setupScenarioTracing()\` + agent-under-test instrumentation) and verify traces emit in the LangWatch UI.
 - Do NOT write a text-only scenario when the user asked for voice — pick one of \`OpenAIRealtimeAgentAdapter\` / \`ElevenLabsAgentAdapter\` / \`PipecatAgentAdapter\` / \`GeminiLiveAgentAdapter\` / \`TwilioAgentAdapter\` / \`ComposableVoiceAgent\`
 - Do NOT instantiate \`OpenAIRealtimeAgentAdapter\` or \`GeminiLiveAgentAdapter\` with placeholder \`instructions=...\` / \`model=...\` / \`tools=...\` — those adapters ARE the agent, so a placeholder constructor tests OpenAI/Gemini defaults, not the user's agent. Either mirror the user's prod config exactly, or pick a different adapter (Pipecat/Twilio/ElevenLabs hosted) that connects to their already-deployed transport.
 - Do NOT point \`PipecatAgentAdapter(url=...)\` / \`ElevenLabsAgentAdapter(agent_id=...)\` / \`TwilioAgentAdapter\` at a transport the user hasn't deployed — those adapters only connect, they don't spin anything up. If the user is text-only and has no voice transport, say so and offer \`ComposableVoiceAgent\` as a voice wrapper around their existing text logic.
@@ -2384,6 +2418,35 @@ describe("My Agent", () => {
 });
 \`\`\`
 
+### Step 4.5: Instrument for observability (REQUIRED before running)
+
+ALWAYS instrument before running — an uninstrumented scenario run emits no traces, so you lose the OTel/LangWatch observability that makes failures debuggable. This is not optional.
+
+There are two distinct things to wire:
+
+**1. Scenario-run tracing** — call \`setupScenarioTracing()\` once at the top of the test file so the simulator, judge, and adapter spans are captured:
+
+\`\`\`typescript
+// TypeScript — add at the very top of the test file, before any imports or setup
+import { setupScenarioTracing } from "@langwatch/scenario";
+setupScenarioTracing();
+\`\`\`
+
+For Python, scenario tracing is configured via \`scenario.configure(...)\` combined with langwatch setup — defer the exact call signature to the \`tracing\` skill.
+
+**2. Agent-under-test tracing** — instrument YOUR OWN agent code so its internal LLM calls, tool invocations, and chain spans are captured:
+
+- Python: \`import langwatch; langwatch.setup()\` at startup, then decorate the agent entry point with \`@langwatch.trace()\`.
+- TypeScript: call \`setupObservability\` from the \`langwatch\` package in your agent's initialization.
+
+**Per-adapter nuance for voice:** when the adapter IS the agent (OpenAI Realtime, Gemini Live), the scenario tracing covers the session. When connecting to a deployed agent (Pipecat/Twilio/ElevenLabs hosted) or wrapping a text agent (Composable), the user's agent process must be instrumented separately in its own codebase.
+
+For framework-specific instrumentation (OpenAI/LangGraph/Vercel/Mastra/Agno), use the \`tracing\` skill — do not hand-roll. The \`tracing\` skill prompt is: "Instrument my code with LangWatch".
+
+**Prerequisite:** Traces only reach LangWatch if \`LANGWATCH_API_KEY\` is set in the environment (plus \`LANGWATCH_ENDPOINT\` for self-hosted). If setup runs but no traces appear in the LangWatch UI, the key is missing.
+
+**VERIFY after the run:** confirm traces were emitted — the scenario run prints a LangWatch trace URL, or the LangWatch UI shows ≥1 trace for the run. A green test with zero traces means instrumentation was skipped.
+
 ### Step 5: Run the Tests
 
 For Python: \`pytest -s test_my_agent.py\` (or \`uv run pytest ...\`).
@@ -2491,6 +2554,8 @@ If the user asks for **voice testing** (e.g. "add voice testing to my agent", "t
 
 CRITICAL: Do NOT write a text-only scenario when the user asked for voice. The judge cannot evaluate "audible empathy" or "noise robustness" against a text transcript.
 
+Voice agents especially need observability — latency, interruptions, and STT/TTS spans are exactly what makes voice failures diagnosable. Instrument per Step 4.5 above (both \`setupScenarioTracing()\` and the agent-under-test) before running. See \`langwatch scenario-docs voice/recipes/observability\` for voice-specific OTel guidance.
+
 ### Step 1: Read the voice docs
 
 \`\`\`bash
@@ -2499,6 +2564,7 @@ langwatch scenario-docs voice/choosing-an-adapter
 langwatch scenario-docs voice/capability-matrix
 langwatch scenario-docs voice/recipes/effects
 langwatch scenario-docs voice/recipes/multi-turn
+langwatch scenario-docs voice/recipes/observability
 \`\`\`
 
 Also browse the runnable voice examples:
@@ -2894,6 +2960,7 @@ Once tests are green, summarize what you delivered and suggest 2-3 domain-specif
 
 ### Code Approach
 
+- Do NOT write a scenario without instrumenting — a green run that emits no traces is half the value; call \`setupScenarioTracing()\` (run-level) and instrument the agent-under-test (\`langwatch.setup()\` / \`setupObservability\`) BEFORE running, and confirm traces appear in the LangWatch UI.
 - Do NOT create your own testing framework — \`@langwatch/scenario\` already handles simulation, judging, multi-turn, and tool-call verification
 - Do NOT write a \`main.py\` / \`run_scenarios.py\` / custom runner that loops over scenarios. Each scenario IS a test (\`it(...)\` / \`async def test_*\`) — run them with \`pytest\` or \`vitest\`. The test runner already gives you parallelism, retries of just the failing case, watch mode, CI integration, and per-test timeouts; a runner script re-implements all of that and ships with none of it wired up.
 - Do NOT invent a JSON / YAML / TOML "scenario DSL" with keys like \`{ "name": ..., "description": ..., "criteria": [...] }\` and then load it into a generic loop. The whole point of Scenario being code is that each test is real code: you can use \`for\`, \`if\`, parametrize (\`@pytest.mark.parametrize\`, \`it.each(...)\`), pull a fixture, call a helper to mint a session, branch by environment, share setup via a \`conftest.py\`, mock a tool inline — none of which a DSL gives you. The moment a teammate needs a new edge case ("only on Tuesdays the agent should escalate"), the DSL grows another key, then another, until it's a worse version of Python/TypeScript with none of the tooling. If the same boilerplate repeats across scenarios, extract a helper FUNCTION that returns an \`AgentAdapter\` / a built \`UserSimulatorAgent\` / a script tuple — keep each scenario its own test case so it stays grep-able and debuggable.
@@ -2911,6 +2978,7 @@ Once tests are green, summarize what you delivered and suggest 2-3 domain-specif
 
 ### Voice Agents
 
+- Do NOT skip observability on voice agents — latency, interruption, and STT/TTS spans are exactly what you need when a voice scenario fails; instrument before running (Step 4.5: \`setupScenarioTracing()\` + agent-under-test instrumentation) and verify traces emit in the LangWatch UI.
 - Do NOT write a text-only scenario when the user asked for voice — pick one of \`OpenAIRealtimeAgentAdapter\` / \`ElevenLabsAgentAdapter\` / \`PipecatAgentAdapter\` / \`GeminiLiveAgentAdapter\` / \`TwilioAgentAdapter\` / \`ComposableVoiceAgent\`
 - Do NOT instantiate \`OpenAIRealtimeAgentAdapter\` or \`GeminiLiveAgentAdapter\` with placeholder \`instructions=...\` / \`model=...\` / \`tools=...\` — those adapters ARE the agent, so a placeholder constructor tests OpenAI/Gemini defaults, not the user's agent. Either mirror the user's prod config exactly, or pick a different adapter (Pipecat/Twilio/ElevenLabs hosted) that connects to their already-deployed transport.
 - Do NOT point \`PipecatAgentAdapter(url=...)\` / \`ElevenLabsAgentAdapter(agent_id=...)\` / \`TwilioAgentAdapter\` at a transport the user hasn't deployed — those adapters only connect, they don't spin anything up. If the user is text-only and has no voice transport, say so and offer \`ComposableVoiceAgent\` as a voice wrapper around their existing text logic.
@@ -3860,6 +3928,35 @@ describe("My Agent", () => {
 });
 \`\`\`
 
+### Step 4.5: Instrument for observability (REQUIRED before running)
+
+ALWAYS instrument before running — an uninstrumented scenario run emits no traces, so you lose the OTel/LangWatch observability that makes failures debuggable. This is not optional.
+
+There are two distinct things to wire:
+
+**1. Scenario-run tracing** — call \`setupScenarioTracing()\` once at the top of the test file so the simulator, judge, and adapter spans are captured:
+
+\`\`\`typescript
+// TypeScript — add at the very top of the test file, before any imports or setup
+import { setupScenarioTracing } from "@langwatch/scenario";
+setupScenarioTracing();
+\`\`\`
+
+For Python, scenario tracing is configured via \`scenario.configure(...)\` combined with langwatch setup — defer the exact call signature to the \`tracing\` skill.
+
+**2. Agent-under-test tracing** — instrument YOUR OWN agent code so its internal LLM calls, tool invocations, and chain spans are captured:
+
+- Python: \`import langwatch; langwatch.setup()\` at startup, then decorate the agent entry point with \`@langwatch.trace()\`.
+- TypeScript: call \`setupObservability\` from the \`langwatch\` package in your agent's initialization.
+
+**Per-adapter nuance for voice:** when the adapter IS the agent (OpenAI Realtime, Gemini Live), the scenario tracing covers the session. When connecting to a deployed agent (Pipecat/Twilio/ElevenLabs hosted) or wrapping a text agent (Composable), the user's agent process must be instrumented separately in its own codebase.
+
+For framework-specific instrumentation (OpenAI/LangGraph/Vercel/Mastra/Agno), use the \`tracing\` skill — do not hand-roll. The \`tracing\` skill prompt is: "Instrument my code with LangWatch".
+
+**Prerequisite:** Traces only reach LangWatch if \`LANGWATCH_API_KEY\` is set in the environment (plus \`LANGWATCH_ENDPOINT\` for self-hosted). If setup runs but no traces appear in the LangWatch UI, the key is missing.
+
+**VERIFY after the run:** confirm traces were emitted — the scenario run prints a LangWatch trace URL, or the LangWatch UI shows ≥1 trace for the run. A green test with zero traces means instrumentation was skipped.
+
 ### Step 5: Run the Tests
 
 For Python: \`pytest -s test_my_agent.py\` (or \`uv run pytest ...\`).
@@ -3967,6 +4064,8 @@ If the user asks for **voice testing** (e.g. "add voice testing to my agent", "t
 
 CRITICAL: Do NOT write a text-only scenario when the user asked for voice. The judge cannot evaluate "audible empathy" or "noise robustness" against a text transcript.
 
+Voice agents especially need observability — latency, interruptions, and STT/TTS spans are exactly what makes voice failures diagnosable. Instrument per Step 4.5 above (both \`setupScenarioTracing()\` and the agent-under-test) before running. See \`langwatch scenario-docs voice/recipes/observability\` for voice-specific OTel guidance.
+
 ### Step 1: Read the voice docs
 
 \`\`\`bash
@@ -3975,6 +4074,7 @@ langwatch scenario-docs voice/choosing-an-adapter
 langwatch scenario-docs voice/capability-matrix
 langwatch scenario-docs voice/recipes/effects
 langwatch scenario-docs voice/recipes/multi-turn
+langwatch scenario-docs voice/recipes/observability
 \`\`\`
 
 Also browse the runnable voice examples:
@@ -4378,6 +4478,7 @@ Do NOT ask permission before Phase 1 and 2 — deliver value first. Do NOT ask g
 
 ### Code Approach
 
+- Do NOT write a scenario without instrumenting — a green run that emits no traces is half the value; call \`setupScenarioTracing()\` (run-level) and instrument the agent-under-test (\`langwatch.setup()\` / \`setupObservability\`) BEFORE running, and confirm traces appear in the LangWatch UI.
 - Do NOT create your own testing framework — \`@langwatch/scenario\` already handles simulation, judging, multi-turn, and tool-call verification
 - Do NOT write a \`main.py\` / \`run_scenarios.py\` / custom runner that loops over scenarios. Each scenario IS a test (\`it(...)\` / \`async def test_*\`) — run them with \`pytest\` or \`vitest\`. The test runner already gives you parallelism, retries of just the failing case, watch mode, CI integration, and per-test timeouts; a runner script re-implements all of that and ships with none of it wired up.
 - Do NOT invent a JSON / YAML / TOML "scenario DSL" with keys like \`{ "name": ..., "description": ..., "criteria": [...] }\` and then load it into a generic loop. The whole point of Scenario being code is that each test is real code: you can use \`for\`, \`if\`, parametrize (\`@pytest.mark.parametrize\`, \`it.each(...)\`), pull a fixture, call a helper to mint a session, branch by environment, share setup via a \`conftest.py\`, mock a tool inline — none of which a DSL gives you. The moment a teammate needs a new edge case ("only on Tuesdays the agent should escalate"), the DSL grows another key, then another, until it's a worse version of Python/TypeScript with none of the tooling. If the same boilerplate repeats across scenarios, extract a helper FUNCTION that returns an \`AgentAdapter\` / a built \`UserSimulatorAgent\` / a script tuple — keep each scenario its own test case so it stays grep-able and debuggable.
@@ -4395,6 +4496,7 @@ Do NOT ask permission before Phase 1 and 2 — deliver value first. Do NOT ask g
 
 ### Voice Agents
 
+- Do NOT skip observability on voice agents — latency, interruption, and STT/TTS spans are exactly what you need when a voice scenario fails; instrument before running (Step 4.5: \`setupScenarioTracing()\` + agent-under-test instrumentation) and verify traces emit in the LangWatch UI.
 - Do NOT write a text-only scenario when the user asked for voice — pick one of \`OpenAIRealtimeAgentAdapter\` / \`ElevenLabsAgentAdapter\` / \`PipecatAgentAdapter\` / \`GeminiLiveAgentAdapter\` / \`TwilioAgentAdapter\` / \`ComposableVoiceAgent\`
 - Do NOT instantiate \`OpenAIRealtimeAgentAdapter\` or \`GeminiLiveAgentAdapter\` with placeholder \`instructions=...\` / \`model=...\` / \`tools=...\` — those adapters ARE the agent, so a placeholder constructor tests OpenAI/Gemini defaults, not the user's agent. Either mirror the user's prod config exactly, or pick a different adapter (Pipecat/Twilio/ElevenLabs hosted) that connects to their already-deployed transport.
 - Do NOT point \`PipecatAgentAdapter(url=...)\` / \`ElevenLabsAgentAdapter(agent_id=...)\` / \`TwilioAgentAdapter\` at a transport the user hasn't deployed — those adapters only connect, they don't spin anything up. If the user is text-only and has no voice transport, say so and offer \`ComposableVoiceAgent\` as a voice wrapper around their existing text logic.
