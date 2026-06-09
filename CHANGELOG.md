@@ -1,5 +1,84 @@
 # Changelog
 
+## [3.5.0](https://github.com/langwatch/langwatch/compare/langwatch@v3.4.1...langwatch@v3.5.0) (2026-06-09)
+
+
+### Features
+
+* **cli:** unify langwatch claude (gateway + OTLP ingest) ([#4544](https://github.com/langwatch/langwatch/issues/4544)) ([9bfc844](https://github.com/langwatch/langwatch/commit/9bfc844c93ccab9945e00f641420e568b2c7ef4d))
+* **datasets:** offer all 30d project evaluator names and event types in dataset mapping ([#4645](https://github.com/langwatch/langwatch/issues/4645)) ([0a0df49](https://github.com/langwatch/langwatch/commit/0a0df496fcab3e93764133b0074c72f5d3056b46))
+* **datasets:** searchable span mapping dropdown + clearer expansion label ([#4649](https://github.com/langwatch/langwatch/issues/4649)) ([311d8af](https://github.com/langwatch/langwatch/commit/311d8af2c8945392398089d002a265d0e886db73))
+* **experiments:** archive instead of hard-delete ([#4466](https://github.com/langwatch/langwatch/issues/4466)) ([0d10af0](https://github.com/langwatch/langwatch/commit/0d10af0c3877742c13964d6d6c2d464ee7935daa))
+* **home:** voice agents banner shown after traces v2 dismissed ([#4502](https://github.com/langwatch/langwatch/issues/4502)) ([9cad558](https://github.com/langwatch/langwatch/commit/9cad5588d388118e32161c1213ecc7656c4a6c1b))
+* **quickstart:** fix dev-infra preset and add workers to all presets ([#4137](https://github.com/langwatch/langwatch/issues/4137)) ([c8c6495](https://github.com/langwatch/langwatch/commit/c8c6495b838b0519b41caa9ce7fcd6e42029d304))
+* **retention:** per-tenant configurable data retention with CH-native TTL ([#4147](https://github.com/langwatch/langwatch/issues/4147)) ([37c78c0](https://github.com/langwatch/langwatch/commit/37c78c0a7e386472df6cc546430800622ef570b0))
+* **simulations:** cap per-message Content/Rest size in projection (defensive seatbelt) ([#4494](https://github.com/langwatch/langwatch/issues/4494)) ([da69303](https://github.com/langwatch/langwatch/commit/da693037d52f188f921067817ca65359b8c8ff17))
+* **skills/scenarios:** nudge against custom runners and JSON-DSL abstractions ([#4510](https://github.com/langwatch/langwatch/issues/4510)) ([3b15cc4](https://github.com/langwatch/langwatch/commit/3b15cc4a8e3eaa4b88fdb24c0ea10cf10e786a56))
+* **skills/scenarios:** voice agents section + dogfood coverage ([#4504](https://github.com/langwatch/langwatch/issues/4504)) ([50a990c](https://github.com/langwatch/langwatch/commit/50a990c5703b821174b76282ca9938add8eadadd))
+* **traces-v2:** drive-through audit pass — sidebar, drawer, table, toolbar ([#4520](https://github.com/langwatch/langwatch/issues/4520)) ([580a39d](https://github.com/langwatch/langwatch/commit/580a39dc325938185a8e2e7cc83efa4789ef7611))
+* **workflows/code-editor:** light/dark Monaco theme + Python stdlib intellisense + secrets autocomplete + input/output contract ([#4519](https://github.com/langwatch/langwatch/issues/4519)) ([3c35520](https://github.com/langwatch/langwatch/commit/3c355204a50ae2d5d419677edb4558a0c39c99a5))
+
+
+### Bug Fixes
+
+* **/me + /settings:** bugbash sweep (drawer copy, support contact, your-projects removal, members layout) ([#4538](https://github.com/langwatch/langwatch/issues/4538)) ([c0d041e](https://github.com/langwatch/langwatch/commit/c0d041efb614a4c8f17892c419b553fa90360140))
+* **app:** auto-recover from stale chunks after deploy via vite:preloadError ([#4475](https://github.com/langwatch/langwatch/issues/4475)) ([d74ab69](https://github.com/langwatch/langwatch/commit/d74ab69881c993fb75d84809310115b607043a0f))
+* **ci:** unit-test hard-floor for the vitest finalize-wedge ([#4481](https://github.com/langwatch/langwatch/issues/4481)) ([9444aa8](https://github.com/langwatch/langwatch/commit/9444aa8d0faff2b0f59757f87ee5411801b20524))
+* **clickhouse:** place ARRAY JOIN before WHERE in events readers ([#4473](https://github.com/langwatch/langwatch/issues/4473)) ([fad629b](https://github.com/langwatch/langwatch/commit/fad629b0183f47d9dd448fefb2b10dcae7ec1940))
+* **collector:** remove 200-span-per-trace cap on REST ingestion ([#4629](https://github.com/langwatch/langwatch/issues/4629)) ([84bd2de](https://github.com/langwatch/langwatch/commit/84bd2de8c1377b1267deeee54254340d1b29b50e)), closes [#4628](https://github.com/langwatch/langwatch/issues/4628)
+* **datasets:** offer all 30d project span names in dataset mapping, lift CH read caps ([#4644](https://github.com/langwatch/langwatch/issues/4644)) ([b70255f](https://github.com/langwatch/langwatch/commit/b70255f269ef2389a75d2c9345ac9f4070edb279))
+* **deps:** bump @vitest/browser-playwright to &gt;=4.1.7 (closes CRITICAL [#1237](https://github.com/langwatch/langwatch/issues/1237)) ([#4569](https://github.com/langwatch/langwatch/issues/4569)) ([b7721c7](https://github.com/langwatch/langwatch/commit/b7721c7cc9ccdb17085e65b00daa0e6d41b0b4e3))
+* **deps:** bump hono to &gt;=4.12.18 across the monorepo (closes 22 alerts) ([#4457](https://github.com/langwatch/langwatch/issues/4457)) ([3e062b5](https://github.com/langwatch/langwatch/commit/3e062b50b44730e3e9b320b186d63a1a4ff993b8))
+* **deps:** bump hono to &gt;=4.12.18 and @hono/node-server to &gt;=1.19.13 across the monorepo ([3e062b5](https://github.com/langwatch/langwatch/commit/3e062b50b44730e3e9b320b186d63a1a4ff993b8))
+* **deps:** bump uuid to &gt;=11.1.1 across the monorepo (closes 7 alerts) ([#4470](https://github.com/langwatch/langwatch/issues/4470)) ([f22706b](https://github.com/langwatch/langwatch/commit/f22706b523526875ecd639d54c1e392d27cbcfae))
+* **deps:** bump vitest to &gt;=4.1.0 across the monorepo (closes 9 CRITICAL alerts) ([#4495](https://github.com/langwatch/langwatch/issues/4495)) ([6f90ef4](https://github.com/langwatch/langwatch/commit/6f90ef48ae5b9436742bbda5d4bef21ea904db82))
+* **deps:** consolidated npm security overrides across the monorepo (closes 18 alerts) ([#4650](https://github.com/langwatch/langwatch/issues/4650)) ([3a56a88](https://github.com/langwatch/langwatch/commit/3a56a884826d493c2d9690ae9359068c193a4725))
+* **deps:** sync langwatch lockfile with mcp-server vitest bump ([#4676](https://github.com/langwatch/langwatch/issues/4676)) ([8a96cee](https://github.com/langwatch/langwatch/commit/8a96cee9c765ba78e48a19263bd4efc92a3494c7))
+* **eval-v3:** prompt-span parity + traces-v2 drawer opt-in routing ([#4657](https://github.com/langwatch/langwatch/issues/4657)) ([88b7179](https://github.com/langwatch/langwatch/commit/88b71793d9fba12d948eebfa0aa7d2c00bd97b55))
+* **evals-v3:** coerce non-string evaluator inputs + lock auto-mapping ([#4642](https://github.com/langwatch/langwatch/issues/4642)) ([914dbd4](https://github.com/langwatch/langwatch/commit/914dbd4109e8f97e178fe2c112ff62b27b9cd0e7))
+* **experiments:** portal comparison-chart dropdowns so filter UI is not clipped ([#4637](https://github.com/langwatch/langwatch/issues/4637)) ([895635d](https://github.com/langwatch/langwatch/commit/895635d65db6b17e8798962648227657564864db))
+* **governance:** prod blackhole on OTLP ingestion + personal VK without default routing policy ([#4533](https://github.com/langwatch/langwatch/issues/4533)) ([a60da54](https://github.com/langwatch/langwatch/commit/a60da5476c3acc95f48c5ef65e0dbcd26404a8f5))
+* **governance:** SaaS CLI gateway default points at parked .com host ([#4625](https://github.com/langwatch/langwatch/issues/4625)) ([c123c40](https://github.com/langwatch/langwatch/commit/c123c40d0ff2860fc8558e480dccb61c1da2c9d6))
+* **governance:** wire + document gateway public URL for self-hosted ([#4626](https://github.com/langwatch/langwatch/issues/4626)) ([940ce3b](https://github.com/langwatch/langwatch/commit/940ce3bc4bad1c6c051befac24a0253c93de622e))
+* make CodeRabbit reviews comment-only so they cannot satisfy approval gate ([#4679](https://github.com/langwatch/langwatch/issues/4679)) ([93d50c5](https://github.com/langwatch/langwatch/commit/93d50c5cdb17ab23161b727f2e5c30be12d5e921))
+* **model-selection:** scope-aware provider delete, Delete naming, table overflow, scenario/suite model selection ([#4658](https://github.com/langwatch/langwatch/issues/4658)) ([70c19a9](https://github.com/langwatch/langwatch/commit/70c19a91d7382163291e6336f508bf1e18253391))
+* **nlpgo:** expose project secrets as `secrets.NAME` in code blocks ([#4465](https://github.com/langwatch/langwatch/issues/4465)) ([7f83e62](https://github.com/langwatch/langwatch/commit/7f83e6250493c6cd21273be40c1ab30e1b5189b4))
+* **nlpgo:** preserve evaluator result envelope so reasoning survives ([#4648](https://github.com/langwatch/langwatch/issues/4648)) ([828cb41](https://github.com/langwatch/langwatch/commit/828cb414911f2ea33d4e2a7d9876b1b841f2cb68))
+* **nlpgo:** resolve `{{ secrets.NAME }}` in HTTP-block url/headers/auth ([#4509](https://github.com/langwatch/langwatch/issues/4509)) ([79eea6c](https://github.com/langwatch/langwatch/commit/79eea6cd3bc5feddb627ff94fe8bddf27e33c6ba))
+* **nlpgo:** stage oversized Lambda invoke payloads to S3 ([#4672](https://github.com/langwatch/langwatch/issues/4672)) ([a861ec6](https://github.com/langwatch/langwatch/commit/a861ec66bb6e7d301ddfe234d743fdd0d8610347))
+* **ops:** populate P50/P99 latency tiles from group-queue durations ([#4492](https://github.com/langwatch/langwatch/issues/4492)) ([0620871](https://github.com/langwatch/langwatch/commit/0620871a2a86879807b09c17a6142b153e72dc93))
+* **retention:** anchor evaluation_runs TTL on UpdatedAt (non-null, partition-aligned) ([#4511](https://github.com/langwatch/langwatch/issues/4511)) ([3f67d75](https://github.com/langwatch/langwatch/commit/3f67d75ae278072bcd0eb812e2118224ea644f96))
+* **skills/scenarios:** clarify per-adapter "how does this connect to my agent?" ([c6b514f](https://github.com/langwatch/langwatch/commit/c6b514f2116e7458634d8c57dcb1c91508df7669))
+* **skills/scenarios:** clarify per-adapter how to connect the user's agent (voice section) ([#4505](https://github.com/langwatch/langwatch/issues/4505)) ([c6b514f](https://github.com/langwatch/langwatch/commit/c6b514f2116e7458634d8c57dcb1c91508df7669))
+* **stored-objects:** externalise AI-SDK file+audio parts (scenario voice audio leak) ([#4493](https://github.com/langwatch/langwatch/issues/4493)) ([2813e87](https://github.com/langwatch/langwatch/commit/2813e871025ffa511e2aece741d93d21e7740e4d))
+* **tokenizer:** bound tiktoken remote BPE fetch with a timeout (unblocks CI shard-3 wedge) ([#4439](https://github.com/langwatch/langwatch/issues/4439)) ([d64071e](https://github.com/langwatch/langwatch/commit/d64071e90882591065172e1bfff0e3649c46e354))
+* **traces-v2:** trace drawer drive-through — scroll, span selection, scope, prefetch ([#4566](https://github.com/langwatch/langwatch/issues/4566)) ([54c017e](https://github.com/langwatch/langwatch/commit/54c017e6cb746d51659991470b643c3437ee9fc4))
+* **traces:** bind recordSpan command to GQ-layer deduplication ([#4680](https://github.com/langwatch/langwatch/issues/4680)) ([0e78826](https://github.com/langwatch/langwatch/commit/0e788268cebb9c81fef37ad7994824429d5cf554))
+* **traces:** route REST collector + track_event through shared span dedup gate ([#4677](https://github.com/langwatch/langwatch/issues/4677)) ([8f3b6f8](https://github.com/langwatch/langwatch/commit/8f3b6f8108f8d16eb9e197f71d5f51c5729dba96))
+
+
+### Miscellaneous
+
+* **coderabbit:** opinionated review config ([#3754](https://github.com/langwatch/langwatch/issues/3754)) ([#4162](https://github.com/langwatch/langwatch/issues/4162)) ([f18890c](https://github.com/langwatch/langwatch/commit/f18890cbfaee5b4787527460e90b3b40b5cb6978))
+* **deps-dev:** bump @vitest/browser ([e917045](https://github.com/langwatch/langwatch/commit/e917045087f37d0b9b6b6e3e7c100dec47f5a7f6))
+* **deps-dev:** bump @vitest/browser from 4.1.5 to 4.1.6 in /langwatch in the npm_and_yarn group across 1 directory ([#4474](https://github.com/langwatch/langwatch/issues/4474)) ([e917045](https://github.com/langwatch/langwatch/commit/e917045087f37d0b9b6b6e3e7c100dec47f5a7f6))
+* **deps:** bump react-router ([eacbee5](https://github.com/langwatch/langwatch/commit/eacbee5ad48b007897edec26514667a5e82d740b))
+* **deps:** bump react-router from 7.14.1 to 7.15.0 in /langwatch in the npm_and_yarn group across 1 directory ([#4554](https://github.com/langwatch/langwatch/issues/4554)) ([eacbee5](https://github.com/langwatch/langwatch/commit/eacbee5ad48b007897edec26514667a5e82d740b))
+* **retention:** remove the PG orphan sweep entirely ([#4526](https://github.com/langwatch/langwatch/issues/4526)) ([50049b5](https://github.com/langwatch/langwatch/commit/50049b552f77d761afd1634541743ba6e0b73de2))
+
+
+### Documentation
+
+* **agent-simulations:** add Voice + Red Teaming, restructure as Scenario highlights ([#4514](https://github.com/langwatch/langwatch/issues/4514)) ([3a33cd4](https://github.com/langwatch/langwatch/commit/3a33cd4de5f3c6dda961d4bb648a917e718aad43))
+* **traces:** remove stale "no options" comment in recordSpan dedup test ([3429c5e](https://github.com/langwatch/langwatch/commit/3429c5e71af6f6d32bd04bfb74d54cd26b1cd75b))
+* **traces:** remove stale comment in recordSpan dedup test ([#4681](https://github.com/langwatch/langwatch/issues/4681)) ([3429c5e](https://github.com/langwatch/langwatch/commit/3429c5e71af6f6d32bd04bfb74d54cd26b1cd75b))
+
+
+### Code Refactoring
+
+* **nlp:** remove the python langwatch_nlp service, nlpgo is the only engine ([#4653](https://github.com/langwatch/langwatch/issues/4653)) ([72085d1](https://github.com/langwatch/langwatch/commit/72085d12a230f8454477cbb5340e895f89b00906))
+* **types:** make zod the single source of truth, remove ts-to-zod ([#4651](https://github.com/langwatch/langwatch/issues/4651)) ([d583fbe](https://github.com/langwatch/langwatch/commit/d583fbe2ed2ca2ef320695323c17f6c362ea4efa))
+
 ## [3.4.1](https://github.com/langwatch/langwatch/compare/langwatch@v3.4.0...langwatch@v3.4.1) (2026-05-31)
 
 
