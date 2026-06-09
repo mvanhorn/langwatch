@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.24.1](https://github.com/langwatch/langwatch/compare/python-sdk@v0.24.0...python-sdk@v0.24.1) (2026-06-09)
+
+
+### Bug Fixes
+
+* **deps:** close python-sdk security alerts with surgical uv bumps ([#4660](https://github.com/langwatch/langwatch/issues/4660)) ([c880c27](https://github.com/langwatch/langwatch/commit/c880c27ba3a796b272f9e3eb7501debf9a2e35e7))
+* **deps:** uv security sweep across langevals, mcp-server, python-sdk ([#4687](https://github.com/langwatch/langwatch/issues/4687)) ([7eba1fb](https://github.com/langwatch/langwatch/commit/7eba1fbec1cf01b7929b35529c41f5b089070263))
+
 ## [0.24.0](https://github.com/langwatch/langwatch/compare/python-sdk@v0.23.0...python-sdk@v0.24.0) (2026-06-01)
 
 
