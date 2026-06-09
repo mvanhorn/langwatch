@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/langwatch/langwatch/compare/skills@v0.6.0...skills@v0.6.1) (2026-06-09)
+
+
+### Bug Fixes
+
+* **deps:** consolidated npm security overrides across the monorepo (closes 18 alerts) ([#4650](https://github.com/langwatch/langwatch/issues/4650)) ([3a56a88](https://github.com/langwatch/langwatch/commit/3a56a884826d493c2d9690ae9359068c193a4725))
+
 ## [0.6.0](https://github.com/langwatch/langwatch/compare/skills@v0.5.0...skills@v0.6.0) (2026-06-03)
 
 
